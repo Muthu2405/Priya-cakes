@@ -65,6 +65,25 @@ cd backend;  $env:DB_ENGINE="sqlite"; python manage.py test      # 38 tests, no 
 cd frontend; npm test                                            # 15 tests
 ```
 
+## Deploy free on Render + Neon
+
+The root `Dockerfile` builds the React app and serves it together with the API from one
+address, so there is no CORS setup. The database is Postgres through `DATABASE_URL`.
+
+1. Push this project to a GitHub repository (the `.env` files are git-ignored).
+2. **Neon** (neon.tech): create a free project, copy the connection string
+   (`postgresql://...?sslmode=require`).
+3. **Render** (render.com): New > Blueprint > pick the repository. It reads `render.yaml`.
+   Fill in `DATABASE_URL` (Neon string), `DJANGO_SUPERUSER_USERNAME` and
+   `DJANGO_SUPERUSER_PASSWORD` (your login), and set `BUSINESS_NAME`.
+4. Wait for the build. Open the `https://<name>.onrender.com` address and sign in.
+   Migrations and the admin user are created automatically on every start.
+
+Free-tier limits: the Render service sleeps after about 15 minutes idle, so the first
+visit takes up to a minute. Neon's free database keeps its data, but take your own
+backups before relying on it for real records:
+`pg_dump "$DATABASE_URL" > backup.sql`. For always-on hosting, use the Docker setup below.
+
 ## Deploy with Docker
 
 Needs a server with Docker and a domain name.

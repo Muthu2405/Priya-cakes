@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: cost-calculator
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECURE_COOKIES
+        value: "1"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL        # paste your Neon connection string
+        sync: false
+      - key: BUSINESS_NAME
+        value: Your Business Name
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

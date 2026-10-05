@@ -20,6 +20,10 @@ if not DEBUG and SECRET_KEY == "dev-only-change-me":
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+# Render tells the service its own public hostname; trust it automatically.
+if render_host := os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(render_host)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{render_host}")
 
 # Shown at the top of PDF reports.
 BUSINESS_NAME = os.environ.get("BUSINESS_NAME", "Product Cost Calculator")
@@ -68,8 +72,12 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-# MySQL by default; set DB_ENGINE=sqlite for quick local runs/tests.
-if os.environ.get("DB_ENGINE", "mysql") == "sqlite":
+# DATABASE_URL (hosted Postgres, e.g. Neon) wins; otherwise MySQL by default,
+# or DB_ENGINE=sqlite for quick local runs/tests.
+if os.environ.get("DATABASE_URL"):
+    import dj_database_url
+    DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"], conn_max_age=60)}
+elif os.environ.get("DB_ENGINE", "mysql") == "sqlite":
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:
     DATABASES = {"default": {
@@ -104,6 +112,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 CORS_EXPOSE_HEADERS = ["Content-Disposition"]  # lets the app read the PDF filename
+
+# The built React app (copied here by the root Dockerfile) is served by Django itself,
+# so the site and API share one address.
+FRONTEND_DIST = BASE_DIR / "frontend_dist"
+if FRONTEND_DIST.is_dir():
+    WHITENOISE_ROOT = FRONTEND_DIST
 
 # Set DJANGO_SECURE_COOKIES=1 when the site is served over HTTPS.
 if os.environ.get("DJANGO_SECURE_COOKIES") == "1":
