@@ -61,7 +61,7 @@ class ApiTests(TestCase):
     def payload(self, **over):
         data = {
             "name": "Cake",
-            "packaging_cost": "10", "eb_cost": "5", "other_cost": "2",
+            "packaging_cost": "10", "eb_cost": "5", "labour_cost": "2",
             "ingredients": [
                 {"ingredient": self.flour.id, "used_quantity": "100", "used_unit": "g"},
                 {"ingredient": self.egg.id, "used_quantity": "3", "used_unit": "pcs"},
@@ -81,6 +81,26 @@ class ApiTests(TestCase):
         detail = self.client.get(f"/api/products/{res.json()['id']}/").json()
         self.assertEqual(detail["total_cost"], "55.00")
         self.assertEqual(detail["ingredients"][0]["calculated_cost"], "20.00")
+
+    def test_profit_defaults_to_30_percent_of_cost(self):
+        res = self.client.post("/api/products/", self.payload(), format="json").json()
+        self.assertEqual(res["total_cost"], "55.00")
+        self.assertEqual(res["profit"], "16.50")         # 30% of 55
+        self.assertEqual(res["selling_price"], "71.50")
+        self.assertEqual(res["labour_cost"], "2.00")
+        self.assertNotIn("other_cost", res)
+
+    def test_profit_can_be_overridden_including_zero(self):
+        res = self.client.post("/api/products/", self.payload(profit="25"), format="json").json()
+        self.assertEqual((res["profit"], res["selling_price"]), ("25.00", "80.00"))
+        res = self.client.post("/api/products/", self.payload(profit="0"), format="json").json()
+        self.assertEqual((res["profit"], res["selling_price"]), ("0.00", "55.00"))
+        bad = self.client.post("/api/products/", self.payload(profit="-1"), format="json")
+        self.assertEqual(bad.status_code, 400)
+
+    def test_calculate_suggests_default_profit_even_when_overridden(self):
+        res = self.client.post("/api/products/calculate/", self.payload(profit="10"), format="json").json()
+        self.assertEqual((res["default_profit"], res["profit"], res["selling_price"]), ("16.50", "10.00", "65.00"))
 
     def test_update_replaces_lines_and_recalculates(self):
         pid = self.client.post("/api/products/", self.payload(), format="json").json()["id"]

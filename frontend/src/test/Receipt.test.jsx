@@ -9,8 +9,10 @@ const data = {
   total_ingredient_cost: "38.00",
   packaging_cost: "10.00",
   eb_cost: "5.00",
-  other_cost: "2.00",
+  labour_cost: "2.00",
   total_cost: "55.00",
+  profit: "16.50",
+  selling_price: "71.50",
 };
 
 test("shows each ingredient line and the final cost", () => {
@@ -21,6 +23,14 @@ test("shows each ingredient line and the final cost", () => {
   expect(screen.getByText("₹18.00")).toBeInTheDocument();
   expect(screen.getByText("₹55.00")).toBeInTheDocument();
   expect(screen.getByText("100 g")).toBeInTheDocument();
+});
+
+test("shows labour, profit and the selling price", () => {
+  render(<Receipt data={data} title="Cake" />);
+  expect(screen.getByText("Labour")).toBeInTheDocument();
+  expect(screen.queryByText("Other")).not.toBeInTheDocument();
+  expect(screen.getByText("₹16.50")).toBeInTheDocument();
+  expect(screen.getByText("₹71.50")).toBeInTheDocument();
 });
 
 test("has no per-piece figure", () => {

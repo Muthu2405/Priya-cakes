@@ -11,13 +11,12 @@ const PERIODS = [
 
 const iso = (d) => d.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
 const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
-const WHOLE = { week: "weeks (Monday–Sunday)", month: "months" };
 const shortDate = (v) => new Date(`${v}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
 export default function SalesReport() {
   const [period, setPeriod] = useState("day");
   // The range is the user's own and stays put when switching Daily / Weekly / Monthly.
-  const [from, setFrom] = useState(() => daysAgo(30));
+  const [from, setFrom] = useState(() => daysAgo(27))  // 28 days = four 7-day weeks, ending today;
   const [to, setTo] = useState(() => iso(new Date()));
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
@@ -87,10 +86,13 @@ export default function SalesReport() {
           </label>
         </div>
         <Notice>{error}</Notice>
-        {report && period !== "day" && (report.start !== from || report.end !== to) && (
+        {report && period === "month" && (report.start !== from || report.end !== to) && (
           <p className="muted">
-            Grouped into whole {WHOLE[period]}, so this report covers {shortDate(report.start)} to {shortDate(report.end)}.
+            Grouped into whole months, so this report covers {shortDate(report.start)} to {shortDate(report.end)}.
           </p>
+        )}
+        {period === "week" && (
+          <p className="muted">Weeks are 7 days each, counted from your From date. The last week is shorter if it runs past the To date.</p>
         )}
 
         {!report ? (
@@ -104,6 +106,12 @@ export default function SalesReport() {
               <div><span>Units sold</span><strong>{totals.units}</strong></div>
               <div><span>Sales</span><strong>{totals.orders}</strong></div>
             </div>
+            {totals.no_cost_orders > 0 && (
+              <p className="muted">
+                {totals.no_cost_orders} sale{totals.no_cost_orders === 1 ? "" : "s"} of products with no cost entered
+                {" "}count in revenue but not in cost or profit.
+              </p>
+            )}
 
             {totals.orders === 0 ? (
               <Empty title="No sales in this range">
@@ -132,7 +140,7 @@ export default function SalesReport() {
                     <tbody>
                       {[...report.series].reverse().map((r) => (
                         <tr key={r.period_start} className={r.orders ? "" : "inactive"}>
-                          <td>{r.label}</td>
+                          <td>{r.label}{period === "week" && <small className="muted"> · {r.days} day{r.days === 1 ? "" : "s"}</small>}</td>
                           <td className="num">{r.orders}</td>
                           <td className="num">{r.units}</td>
                           <td className="num">{inr(r.revenue)}</td>
@@ -159,8 +167,8 @@ export default function SalesReport() {
               </thead>
               <tbody>
                 {report.by_product.map((p) => (
-                  <tr key={p.product}>
-                    <td>{p.product_name}</td>
+                  <tr key={p.product ?? p.product_name}>
+                    <td>{p.product_name}{!p.in_catalog && <small className="muted"> · not in products</small>}</td>
                     <td className="num">{p.units}</td>
                     <td className="num">{inr(p.revenue)}</td>
                     <td className={`num ${Number(p.profit) < 0 ? "loss" : ""}`}>{inr(p.profit)}</td>

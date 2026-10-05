@@ -16,7 +16,11 @@ export default function ProductCreate() {
   const [ingredients, setIngredients] = useState([]);
   const [name, setName] = useState("");
   const [rows, setRows] = useState([newRow()]);
-  const [extras, setExtras] = useState({ packaging_cost: "", eb_cost: "", other_cost: "" });
+  const [extras, setExtras] = useState({ packaging_cost: "", eb_cost: "", labour_cost: "" });
+
+  // Profit follows 30% of the cost until the user types their own amount.
+  const [profit, setProfit] = useState("");
+  const [profitEdited, setProfitEdited] = useState(false);
 
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -37,8 +41,13 @@ export default function ProductCreate() {
           setExtras({
             packaging_cost: String(Number(p.packaging_cost)),
             eb_cost: String(Number(p.eb_cost)),
-            other_cost: String(Number(p.other_cost)),
+            labour_cost: String(Number(p.labour_cost)),
           });
+          const auto = Math.round(Number(p.total_cost) * 30) / 100;
+          if (Math.abs(Number(p.profit) - auto) > 0.005) {
+            setProfit(String(Number(p.profit)));
+            setProfitEdited(true);
+          }
           setRows(p.ingredients.map((l) =>
             newRow({ ingredient: String(l.ingredient), used_quantity: String(Number(l.used_quantity)), used_unit: l.used_unit })
           ));
@@ -61,7 +70,8 @@ export default function ProductCreate() {
     name: name.trim() || "Untitled product",
     packaging_cost: extras.packaging_cost || "0",
     eb_cost: extras.eb_cost || "0",
-    other_cost: extras.other_cost || "0",
+    labour_cost: extras.labour_cost || "0",
+    ...(profitEdited ? { profit } : {}),
     ingredients: validRows.map((r) => ({
       ingredient: Number(r.ingredient),
       used_quantity: r.used_quantity,
@@ -70,7 +80,7 @@ export default function ProductCreate() {
   });
 
   // Live preview, debounced; ignores out-of-order responses.
-  const snapshot = JSON.stringify({ name, extras, validRows });
+  const snapshot = JSON.stringify({ name, extras, validRows, profit: profitEdited ? profit : null });
   const settled = useDebounced(snapshot, 350);
   const latest = useRef(0);
   useEffect(() => {
@@ -173,9 +183,28 @@ export default function ProductCreate() {
             <label>EB / electricity (₹)
               <input type="number" min="0" step="0.01" value={extras.eb_cost} onChange={setExtra("eb_cost")} placeholder="0" />
             </label>
-            <label>Other (₹)
-              <input type="number" min="0" step="0.01" value={extras.other_cost} onChange={setExtra("other_cost")} placeholder="0" />
+            <label>Labour (₹)
+              <input type="number" min="0" step="0.01" value={extras.labour_cost} onChange={setExtra("labour_cost")} placeholder="0" />
             </label>
+          </section>
+
+          <section className="card form-grid">
+            <h2>Profit</h2>
+            <label>Profit (₹)
+              <input type="number" min="0" step="0.01"
+                value={profitEdited ? profit : preview.data?.default_profit ?? ""}
+                onChange={(e) => {
+                  // clearing the box goes back to the automatic 30%
+                  setProfit(e.target.value);
+                  setProfitEdited(e.target.value !== "");
+                }}
+                placeholder="30% of cost" />
+            </label>
+            <p className="muted small grow">
+              {profitEdited
+                ? <>Your own amount. <button type="button" className="link" onClick={() => { setProfit(""); setProfitEdited(false); }}>Use 30% of cost</button></>
+                : "Filled in as 30% of the final cost. Type a different amount to change it."}
+            </p>
           </section>
 
           <Notice>{saveError}</Notice>

@@ -34,6 +34,14 @@ class PdfTests(TestCase):
         self.assertIn("chocolate-cake-costing.pdf", res["Content-Disposition"])
         self.assertTrue(res.content.startswith(b"%PDF"))
 
+    def test_pdf_shows_labour_profit_and_selling_price(self):
+        from .services import build_product_pdf
+        from products.models import Product
+        pdf = build_product_pdf(Product.objects.get(pk=self.pid))
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        res = self.client.get(f"/api/products/{self.pid}/").json()
+        self.assertEqual(res["selling_price"], "{:.2f}".format(float(res["total_cost"]) + float(res["profit"])))
+
     def test_other_users_pdf_is_404(self):
         other = APIClient()
         other.force_authenticate(User.objects.create_user("bob", password="pw-12345-x"))

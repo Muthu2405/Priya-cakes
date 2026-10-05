@@ -102,8 +102,10 @@ def build_product_pdf(product) -> bytes:
         ["Ingredient total", money(product.total_ingredient_cost)],
         ["Packaging", money(product.packaging_cost)],
         ["EB / electricity", money(product.eb_cost)],
-        ["Other charges", money(product.other_cost)],
-        ["Final total", money(product.total_cost)],
+        ["Labour", money(product.labour_cost)],
+        ["Final cost", money(product.total_cost)],
+        ["Profit", money(product.profit)],
+        ["Selling price", money(product.selling_price)],
     ]
     st = Table(summary, colWidths=[110 * mm, 60 * mm])
     st.setStyle(TableStyle([
@@ -113,6 +115,8 @@ def build_product_pdf(product) -> bytes:
         ("ALIGN", (1, 0), (1, -1), "RIGHT"),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LINEABOVE", (0, 4), (-1, 4), 0.6, INK),
+        ("FONTNAME", (0, 4), (-1, 4), bold),
         ("LINEABOVE", (0, -1), (-1, -1), 1, INK),
         ("BACKGROUND", (0, -1), (-1, -1), TURMERIC),
         ("FONTNAME", (0, -1), (-1, -1), bold),

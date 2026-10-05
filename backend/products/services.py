@@ -2,6 +2,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 CENT = Decimal("0.01")
+DEFAULT_PROFIT_RATE = Decimal("0.30")
 
 # unit -> (family, factor to the family's base unit)
 UNITS = {
@@ -43,7 +44,12 @@ def ingredient_cost(ingredient, used_quantity, used_unit) -> Decimal:
     return money(Decimal(ingredient.price) * used_base / stock_base)
 
 
-def calculate_product(lines, packaging_cost=0, eb_cost=0, other_cost=0) -> dict:
+def default_profit(total_cost) -> Decimal:
+    """30% of the cost, to the paisa."""
+    return money(Decimal(total_cost) * DEFAULT_PROFIT_RATE)
+
+
+def calculate_product(lines, packaging_cost=0, eb_cost=0, labour_cost=0, profit=None) -> dict:
     """`lines`: iterable of dicts with ingredient, used_quantity, used_unit."""
     results = []
     for line in lines:
@@ -51,15 +57,20 @@ def calculate_product(lines, packaging_cost=0, eb_cost=0, other_cost=0) -> dict:
         results.append({**line, "calculated_cost": cost})
 
     ingredient_total = sum((r["calculated_cost"] for r in results), Decimal("0.00"))
-    packaging, eb, other = money(packaging_cost), money(eb_cost), money(other_cost)
-    total = ingredient_total + packaging + eb + other
+    packaging, eb, labour = money(packaging_cost), money(eb_cost), money(labour_cost)
+    total = ingredient_total + packaging + eb + labour
+    suggested = default_profit(total)
+    profit = suggested if profit is None else money(profit)
 
     return {
         "lines": results,
         "total_ingredient_cost": ingredient_total,
         "packaging_cost": packaging,
         "eb_cost": eb,
-        "other_cost": other,
-        "total_additional_cost": packaging + eb + other,
+        "labour_cost": labour,
+        "total_additional_cost": packaging + eb + labour,
         "total_cost": total,
+        "default_profit": suggested,
+        "profit": profit,
+        "selling_price": total + profit,
     }

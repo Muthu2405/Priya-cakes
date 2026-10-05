@@ -58,7 +58,7 @@ export default function Products() {
             <table>
               <thead>
                 <tr>
-                  <th>Product</th><th className="num">Final cost</th><th>Saved</th><th />
+                  <th>Product</th><th className="num">Final cost</th><th className="num">Profit</th><th className="num">Selling price</th><th>Saved</th><th />
                 </tr>
               </thead>
               <tbody>
@@ -66,6 +66,8 @@ export default function Products() {
                   <tr key={p.id}>
                     <td><Link to={`/products/${p.id}`}>{p.name}</Link></td>
                     <td className="num">{inr(p.total_cost)}</td>
+                    <td className="num">{inr(p.profit)}</td>
+                    <td className="num">{inr(p.selling_price)}</td>
                     <td>{dateLabel(p.created_at)}</td>
                     <td className="row-actions">
                       <Link className="link" to={`/sales?product=${p.id}`}>Sell</Link>

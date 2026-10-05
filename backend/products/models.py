@@ -14,14 +14,20 @@ class Product(models.Model):
     name = models.CharField(max_length=160)
     packaging_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     eb_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    other_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    labour_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_ingredient_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Profit added on top of cost; defaults to 30% of the cost but the user can set any amount.
+    profit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def selling_price(self):
+        return self.total_cost + self.profit
 
     def __str__(self):
         return self.name

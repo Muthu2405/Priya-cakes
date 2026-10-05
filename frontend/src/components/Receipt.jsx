@@ -29,13 +29,19 @@ export default function Receipt({ data, title, status, stale }) {
         <li><span>Ingredients</span><i aria-hidden="true" /><b>{inr(data.total_ingredient_cost)}</b></li>
         <li><span>Packaging</span><i aria-hidden="true" /><b>{inr(data.packaging_cost)}</b></li>
         <li><span>EB / electricity</span><i aria-hidden="true" /><b>{inr(data.eb_cost)}</b></li>
-        <li><span>Other</span><i aria-hidden="true" /><b>{inr(data.other_cost)}</b></li>
+        <li><span>Labour</span><i aria-hidden="true" /><b>{inr(data.labour_cost)}</b></li>
       </ul>
 
       <div className="final">
         <span>Final cost</span>
         <strong>{inr(data.total_cost)}</strong>
       </div>
+      {data.profit !== undefined && (
+        <ul className="leaders subtotal">
+          <li><span>Profit</span><i aria-hidden="true" /><b>{inr(data.profit)}</b></li>
+          <li><span>Selling price</span><i aria-hidden="true" /><b>{inr(data.selling_price)}</b></li>
+        </ul>
+      )}
       {status && <p className="muted small">{status}</p>}
     </aside>
   );

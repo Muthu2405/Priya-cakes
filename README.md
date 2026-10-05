@@ -4,11 +4,11 @@ Works out what a product costs to make from the ingredient quantities used.
 React + Django REST Framework + MySQL.
 
 - Ingredient price list per user (name, quantity, unit, price)
-- Products: pick ingredients, enter the quantity used, add packaging, EB and other costs, get the final cost
+- Products: pick ingredients, enter the quantity used, add packaging, EB and labour costs, get the final cost; profit defaults to 30% of the cost (editable) and gives the selling price
 - Units are converted automatically (kg/g, L/ml, pcs) and incompatible units are rejected
 - Saved products keep the ingredient prices from the day they were saved
 - Downloadable PDF costing report for every product
-- Record sales (quantity, selling price, date) and get daily, weekly and monthly sales reports with revenue, cost and profit, per-product totals and CSV export
+- Record sales (quantity, selling price, date) for products in your list or any other product typed in by name and get daily, weekly and monthly sales reports with revenue, cost and profit, per-product totals and CSV export. Weeks are plain 7-day blocks counted from the From date (e.g. 29 Sep – 5 Oct)
 - Login required; each user only sees their own ingredients and products
 
 ## Run locally (Windows PowerShell)
@@ -61,8 +61,8 @@ they are visible only in the admin.
 ## Tests
 
 ```powershell
-cd backend;  $env:DB_ENGINE="sqlite"; python manage.py test      # 38 tests, no MySQL needed
-cd frontend; npm test                                            # 15 tests
+cd backend;  $env:DB_ENGINE="sqlite"; python manage.py test      # 53 tests, no MySQL needed
+cd frontend; npm test                                            # 22 tests
 ```
 
 ## Deploy free on Render + Neon

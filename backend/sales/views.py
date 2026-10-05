@@ -9,10 +9,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .models import Sale, today
-from .reports import PERIODS, bucket_end, bucket_start, build_report
+from .reports import PERIODS, build_report, resolve_range
 from .serializers import SaleSerializer
 
-DEFAULT_DAYS = {"day": 30, "week": 12 * 7, "month": 365}
+DEFAULT_DAYS = {"day": 28, "week": 28, "month": 365}  # weeks default to 4 whole 7-day blocks
 MAX_BUCKETS = 400
 
 
@@ -61,14 +61,12 @@ def _report_for(request):
     if period not in PERIODS:
         raise ValidationError({"period": "Choose day, week or month."})
     end = _date(request, "to") or today()
-    start = _date(request, "from") or end - timedelta(days=DEFAULT_DAYS[period])
+    start = _date(request, "from") or end - timedelta(days=DEFAULT_DAYS[period] - 1)
     if start > end:
         raise ValidationError({"from": "Start date must be on or before the end date."})
     if (end - start).days > MAX_BUCKETS * {"day": 1, "week": 7, "month": 31}[period]:
         raise ValidationError({"from": "That range is too long for this period. Narrow the dates."})
-    # Snap to whole days/weeks/months so the dates shown always match the rows
-    # and no week or month is silently partial.
-    start, end = bucket_start(start, period), bucket_end(end, period)
+    start, end = resolve_range(period, start, end)  # only months are widened (to whole months)
     sales = Sale.objects.filter(owner=request.user, sold_on__gte=start, sold_on__lte=end).select_related("product")
     return build_report(sales, period, start, end)
 

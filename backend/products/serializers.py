@@ -36,14 +36,17 @@ class ProductSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=160)
     packaging_cost = serializers.DecimalField(**MONEY)
     eb_cost = serializers.DecimalField(**MONEY)
-    other_cost = serializers.DecimalField(**MONEY)
+    labour_cost = serializers.DecimalField(**MONEY)
+    # Optional: left out, it becomes 30% of the cost.
+    profit = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False)
+    selling_price = serializers.DecimalField(max_digits=13, decimal_places=2, read_only=True)
     ingredients = ProductIngredientSerializer(many=True)
 
     class Meta:
         model = Product
         fields = [
-            "id", "name", "packaging_cost", "eb_cost", "other_cost",
-            "total_ingredient_cost", "total_cost",
+            "id", "name", "packaging_cost", "eb_cost", "labour_cost",
+            "total_ingredient_cost", "total_cost", "profit", "selling_price",
             "ingredients", "created_at", "updated_at",
         ]
         read_only_fields = ["total_ingredient_cost", "total_cost", "created_at", "updated_at"]
@@ -65,7 +68,8 @@ class ProductSerializer(serializers.ModelSerializer):
                 attrs["ingredients"],
                 attrs["packaging_cost"],
                 attrs["eb_cost"],
-                attrs["other_cost"],
+                attrs["labour_cost"],
+                attrs.get("profit"),
             )
         except IncompatibleUnitsError as exc:
             raise serializers.ValidationError({"ingredients": str(exc)})
@@ -78,7 +82,8 @@ class ProductSerializer(serializers.ModelSerializer):
             setattr(product, field, value)
         product.packaging_cost = computed["packaging_cost"]
         product.eb_cost = computed["eb_cost"]
-        product.other_cost = computed["other_cost"]
+        product.labour_cost = computed["labour_cost"]
+        product.profit = computed["profit"]
         product.total_ingredient_cost = computed["total_ingredient_cost"]
         product.total_cost = computed["total_cost"]
         product.save()
