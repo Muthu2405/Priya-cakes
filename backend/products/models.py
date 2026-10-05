@@ -7,11 +7,18 @@ from django.db import models
 from ingredients.models import Ingredient, Unit
 
 
+class SoldBy(models.TextChoices):
+    PCS = "pcs", "pcs"
+    KG = "kg", "kg"
+
+
 class Product(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="products"
     )
     name = models.CharField(max_length=160)
+    # Whether this product is sold by the piece or by weight (kg).
+    sold_by = models.CharField(max_length=3, choices=SoldBy.choices, default=SoldBy.PCS)
     packaging_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     eb_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     labour_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)

@@ -82,6 +82,18 @@ class ApiTests(TestCase):
         self.assertEqual(detail["total_cost"], "55.00")
         self.assertEqual(detail["ingredients"][0]["calculated_cost"], "20.00")
 
+    def test_sold_by_defaults_to_pcs_and_accepts_kg(self):
+        res = self.client.post("/api/products/", self.payload(), format="json").json()
+        self.assertEqual(res["sold_by"], "pcs")
+        res = self.client.post("/api/products/", self.payload(name="Mixture", sold_by="kg"), format="json").json()
+        self.assertEqual(res["sold_by"], "kg")
+        res = self.client.put(f"/api/products/{res['id']}/", self.payload(name="Mixture", sold_by="pcs"), format="json").json()
+        self.assertEqual(res["sold_by"], "pcs")
+
+    def test_sold_by_rejects_other_values(self):
+        res = self.client.post("/api/products/", self.payload(sold_by="litre"), format="json")
+        self.assertEqual(res.status_code, 400)
+
     def test_profit_defaults_to_30_percent_of_cost(self):
         res = self.client.post("/api/products/", self.payload(), format="json").json()
         self.assertEqual(res["total_cost"], "55.00")

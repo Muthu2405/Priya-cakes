@@ -85,8 +85,8 @@ test("recording a sale posts the form and refreshes the list", async () => {
 
   await screen.findByRole("option", { name: "Cake" });
   await userEvent.selectOptions(screen.getByLabelText("Product"), "1");
-  await userEvent.clear(screen.getByLabelText("Quantity"));
-  await userEvent.type(screen.getByLabelText("Quantity"), "3");
+  await userEvent.clear(screen.getByLabelText(/^Quantity/));
+  await userEvent.type(screen.getByLabelText(/^Quantity/), "3");
   expect(screen.getByLabelText(/Selling price/)).toHaveValue(130);  // starts at the selling price (cost + profit)
   await userEvent.clear(screen.getByLabelText(/Selling price/));
   await userEvent.type(screen.getByLabelText(/Selling price/), "150");

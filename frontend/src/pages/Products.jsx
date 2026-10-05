@@ -58,13 +58,14 @@ export default function Products() {
             <table>
               <thead>
                 <tr>
-                  <th>Product</th><th className="num">Final cost</th><th className="num">Profit</th><th className="num">Selling price</th><th>Saved</th><th />
+                  <th>Product</th><th>Sold by</th><th className="num">Final cost</th><th className="num">Profit</th><th className="num">Selling price</th><th>Saved</th><th />
                 </tr>
               </thead>
               <tbody>
                 {items.map((p) => (
                   <tr key={p.id}>
                     <td><Link to={`/products/${p.id}`}>{p.name}</Link></td>
+                    <td>{p.sold_by}</td>
                     <td className="num">{inr(p.total_cost)}</td>
                     <td className="num">{inr(p.profit)}</td>
                     <td className="num">{inr(p.selling_price)}</td>

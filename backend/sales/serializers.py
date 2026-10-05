@@ -20,6 +20,8 @@ class SaleSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(max_length=160, required=False, allow_blank=True)
     unit_cost = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False, allow_null=True)
+    quantity = serializers.DecimalField(max_digits=12, decimal_places=3, min_value=Decimal("0.001"))
+    sold_by = serializers.SerializerMethodField()
     in_catalog = serializers.SerializerMethodField()
     revenue = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     cost = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True, allow_null=True)
@@ -27,9 +29,12 @@ class SaleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sale
-        fields = ["id", "product", "product_name", "in_catalog", "sold_on", "quantity", "unit_price",
+        fields = ["id", "product", "product_name", "in_catalog", "sold_by", "sold_on", "quantity", "unit_price",
                   "unit_cost", "revenue", "cost", "profit", "created_at"]
         read_only_fields = ["id", "created_at"]
+
+    def get_sold_by(self, obj):
+        return obj.product.sold_by if obj.product_id else "pcs"
 
     def get_in_catalog(self, obj):
         return obj.product_id is not None
@@ -48,6 +53,8 @@ class SaleSerializer(serializers.ModelSerializer):
             # Catalogue product: name and cost come from the product itself.
             attrs["product_name"] = product.name
             attrs["unit_cost"] = product.total_cost
+            if product.sold_by == "pcs" and attrs["quantity"] != attrs["quantity"].to_integral_value():
+                raise serializers.ValidationError({"quantity": "This product is sold by the piece, so use a whole number."})
         else:
             name = attrs.get("product_name") or (self.instance.product_name if self.instance and "product" not in attrs else "")
             if not name:

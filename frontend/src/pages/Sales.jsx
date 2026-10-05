@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../services/api.js";
-import { Empty, Notice, dateLabel, inr } from "../components/ui.jsx";
+import { Empty, Notice, dateLabel, inr, qty } from "../components/ui.jsx";
 
 const OTHER = "__other"; // a product that isn't in the user's product list
 const todayISO = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
@@ -58,7 +58,7 @@ export default function Sales() {
     setForm({
       product: s.product ? String(s.product) : OTHER,
       product_name: s.product ? "" : s.product_name,
-      quantity: String(s.quantity),
+      quantity: qty(s.quantity),
       unit_price: s.unit_price,
       unit_cost: s.product ? "" : s.unit_cost ?? "",
       sold_on: s.sold_on,
@@ -98,7 +98,7 @@ export default function Sales() {
   }
 
   async function remove(s) {
-    if (!window.confirm(`Delete this sale of ${s.quantity} × ${s.product_name}?`)) return;
+    if (!window.confirm(`Delete this sale of ${qty(s.quantity)} ${s.sold_by} × ${s.product_name}?`)) return;
     try {
       await api.deleteSale(s.id);
       if (editingId === s.id) reset();
@@ -111,6 +111,8 @@ export default function Sales() {
 
   const isOther = form.product === OTHER;
   const chosen = products.find((p) => String(p.id) === form.product);
+  const byKg = chosen?.sold_by === "kg";
+  const unitLabel = byKg ? "kg" : "pcs";
   const unitCost = isOther ? form.unit_cost : chosen?.total_cost;
   const liveProfit = unitCost !== undefined && unitCost !== "" && form.unit_price !== "" && Number(form.quantity) > 0
     ? Number(form.quantity) * (Number(form.unit_price) - Number(unitCost))
@@ -137,10 +139,10 @@ export default function Sales() {
             <input value={form.product_name} onChange={set("product_name")} required maxLength={160} placeholder="Brownie" />
           </label>
         )}
-        <label>Quantity
-          <input type="number" min="1" step="1" value={form.quantity} onChange={set("quantity")} required />
+        <label>Quantity ({unitLabel})
+          <input type="number" min={byKg ? "0.001" : "1"} step={byKg ? "any" : "1"} value={form.quantity} onChange={set("quantity")} required />
         </label>
-        <label>Selling price each (₹)
+        <label>Selling price per {unitLabel} (₹)
           <input type="number" min="0" step="0.01" value={form.unit_price} onChange={setPrice} required />
           {chosen && <small className="muted">Starts at the selling price ({inr(chosen.selling_price)}). Change it if you sold for less or more.</small>}
         </label>
@@ -190,7 +192,7 @@ export default function Sales() {
                   <tr key={s.id}>
                     <td>{dateLabel(s.sold_on)}</td>
                     <td>{s.product_name}{!s.in_catalog && <small className="muted"> · not in products</small>}</td>
-                    <td className="num">{s.quantity}</td>
+                    <td className="num">{qty(s.quantity)} {s.sold_by}</td>
                     <td className="num">{inr(s.unit_price)}</td>
                     <td className="num">{inr(s.revenue)}</td>
                     <td className={`num ${s.profit !== null && Number(s.profit) < 0 ? "loss" : ""}`}>

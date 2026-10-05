@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from ingredients.models import Ingredient, Unit
 
-from .models import Product, ProductIngredient
+from .models import Product, ProductIngredient, SoldBy
 from .services import IncompatibleUnitsError, calculate_product
 
 MONEY = dict(max_digits=12, decimal_places=2, min_value=Decimal("0"), default=0)
@@ -34,6 +34,7 @@ class ProductIngredientSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=160)
+    sold_by = serializers.ChoiceField(choices=SoldBy.choices, default=SoldBy.PCS)
     packaging_cost = serializers.DecimalField(**MONEY)
     eb_cost = serializers.DecimalField(**MONEY)
     labour_cost = serializers.DecimalField(**MONEY)
@@ -45,7 +46,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "packaging_cost", "eb_cost", "labour_cost",
+            "id", "name", "sold_by", "packaging_cost", "eb_cost", "labour_cost",
             "total_ingredient_cost", "total_cost", "profit", "selling_price",
             "ingredients", "created_at", "updated_at",
         ]

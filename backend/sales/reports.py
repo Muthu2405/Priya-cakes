@@ -52,6 +52,13 @@ def _row():
     return {"orders": 0, "units": 0, "revenue": ZERO, "cost": ZERO, "profit": ZERO, "no_cost_orders": 0}
 
 
+def _clean_units(row):
+    """Whole counts stay integers (3); kg sales can be fractional (2.5). Display-only figure."""
+    u = Decimal(row["units"])
+    row["units"] = int(u) if u == u.to_integral_value() else float(u)
+    return row
+
+
 def add_sale(row, s):
     row["orders"] += 1
     row["units"] += s.quantity
@@ -82,7 +89,7 @@ def build_report(sales, period: str, start: date, end: date) -> dict:
         series.append({
             "period_start": cursor.isoformat(), "period_end": last.isoformat(),
             "label": _label(cursor, last, period), "days": (last - cursor).days + 1,
-            **buckets.get(cursor, _row()),
+            **_clean_units(dict(buckets.get(cursor, _row()))),
         })
         cursor = last + timedelta(days=1)
 
@@ -90,10 +97,11 @@ def build_report(sales, period: str, start: date, end: date) -> dict:
     for row in buckets.values():
         for k in total:
             total[k] += row[k]
+    _clean_units(total)
 
     by_product = sorted(
         ({"product": labels[k][0], "product_name": labels[k][1], "in_catalog": labels[k][0] is not None, **row}
-         for k, row in products.items()),
+         for k, row in ((k, _clean_units(r)) for k, r in products.items())),
         key=lambda r: r["revenue"], reverse=True,
     )
     return {

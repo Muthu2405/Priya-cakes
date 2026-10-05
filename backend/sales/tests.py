@@ -87,6 +87,17 @@ class SalesApiTests(TestCase):
         self.assertEqual(self.sell(1, "10", today() + timedelta(days=1)).status_code, 400)
         self.assertEqual(self.sell(0, "10", today()).status_code, 400)
 
+    def test_kg_product_accepts_decimal_quantity(self):
+        murukku = Product.objects.create(owner=self.user, name="Murukku", sold_by="kg", total_cost=Decimal("200"))
+        res = self.sell("0.5", "300", today(), murukku)
+        self.assertEqual(res.status_code, 201, res.content)
+        self.assertEqual((res.data["sold_by"], res.data["revenue"], res.data["profit"]), ("kg", "150.00", "50.00"))
+        self.assertEqual(self.report(period="day")["totals"]["units"], 0.5)
+
+    def test_pcs_product_rejects_fractional_quantity(self):
+        self.assertEqual(self.sell("1.5", "130", today()).status_code, 400)
+        self.assertEqual(self.sell("2.0", "130", today()).status_code, 201)
+
     def test_only_own_sales_listed(self):
         Sale.objects.create(owner=self.other, product=self.theirs, product_name="Pie", quantity=1, unit_price=1, unit_cost=1)
         self.sell(1, "10", today())

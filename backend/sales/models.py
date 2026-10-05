@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -6,6 +6,11 @@ from django.db import models
 from django.utils import timezone
 
 from products.models import Product
+
+
+def _paise(value):
+    """Quantity can have 3 decimals (kg), so round money back to 2."""
+    return Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def today():
@@ -19,7 +24,8 @@ class Sale(models.Model):
     product = models.ForeignKey(Product, null=True, blank=True, on_delete=models.SET_NULL, related_name="sales")
     product_name = models.CharField(max_length=160)
     sold_on = models.DateField(default=today, db_index=True)
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    # Whole numbers for products sold by the piece, decimals (e.g. 0.5) for products sold by the kg.
+    quantity = models.DecimalField(max_digits=12, decimal_places=3, validators=[MinValueValidator(Decimal("0.001"))])
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0"))])
     # Snapshot of the product's cost when the sale was recorded, so later re-costing
     # never rewrites past profit. Empty when the cost of a one-off item isn't known.
@@ -31,11 +37,11 @@ class Sale(models.Model):
 
     @property
     def revenue(self):
-        return self.unit_price * self.quantity
+        return _paise(self.unit_price * self.quantity)
 
     @property
     def cost(self):
-        return None if self.unit_cost is None else self.unit_cost * self.quantity
+        return None if self.unit_cost is None else _paise(self.unit_cost * self.quantity)
 
     @property
     def profit(self):

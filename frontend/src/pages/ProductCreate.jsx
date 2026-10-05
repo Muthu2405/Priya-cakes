@@ -15,6 +15,7 @@ export default function ProductCreate() {
 
   const [ingredients, setIngredients] = useState([]);
   const [name, setName] = useState("");
+  const [soldBy, setSoldBy] = useState("pcs");
   const [rows, setRows] = useState([newRow()]);
   const [extras, setExtras] = useState({ packaging_cost: "", eb_cost: "", labour_cost: "" });
 
@@ -38,6 +39,7 @@ export default function ProductCreate() {
         if (editing) {
           const p = await api.getProduct(id);
           setName(p.name);
+          setSoldBy(p.sold_by || "pcs");
           setExtras({
             packaging_cost: String(Number(p.packaging_cost)),
             eb_cost: String(Number(p.eb_cost)),
@@ -68,6 +70,7 @@ export default function ProductCreate() {
   const validRows = rows.filter((r) => r.ingredient && r.used_quantity !== "" && Number(r.used_quantity) >= 0);
   const buildBody = () => ({
     name: name.trim() || "Untitled product",
+    sold_by: soldBy,
     packaging_cost: extras.packaging_cost || "0",
     eb_cost: extras.eb_cost || "0",
     labour_cost: extras.labour_cost || "0",
@@ -80,7 +83,7 @@ export default function ProductCreate() {
   });
 
   // Live preview, debounced; ignores out-of-order responses.
-  const snapshot = JSON.stringify({ name, extras, validRows, profit: profitEdited ? profit : null });
+  const snapshot = JSON.stringify({ name, soldBy, extras, validRows, profit: profitEdited ? profit : null });
   const settled = useDebounced(snapshot, 350);
   const latest = useRef(0);
   useEffect(() => {
@@ -131,6 +134,12 @@ export default function ProductCreate() {
           <section className="card form-grid">
             <label className="grow">Product name
               <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={160} placeholder="Chocolate cake" />
+            </label>
+            <label>Sold by
+              <select value={soldBy} onChange={(e) => setSoldBy(e.target.value)}>
+                <option value="pcs">pcs</option>
+                <option value="kg">kg</option>
+              </select>
             </label>
           </section>
 
